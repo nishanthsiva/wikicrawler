@@ -233,7 +233,7 @@ public class PageRank {
                 break;
             }
             currentRank = nextRank;
-            LOGGER.log(Level.INFO,n+" step! norm value= "+norm);
+            LOGGER.log(Level.FINE,n+" step! norm value= "+norm);
             n++;
         }
 

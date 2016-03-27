@@ -4,7 +4,7 @@ import java.util.TreeSet;
 /**
  * Created by Nishanth Sivakumar and Sriram Balasubramanian on 3/27/16.
  */
-public class WikiTennisRanker {
+public class MyWikiRanker {
 
     public static Set<String> convertArrayToSet(String[] stringArray){
         Set<String> stringSet = new TreeSet<>();
