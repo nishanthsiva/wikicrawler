@@ -219,9 +219,39 @@ public class PageRank {
 
         parseGraph();
         createPageIndex();
-
+        int n=0;
+        boolean converged = false;
+        HashMap<String,Double> currentRank = this.pageRanks;
+        HashMap<String,Double> nextRank;
+        while(!converged){
+            nextRank = computeNextP(currentRank);
+            double norm = normalize(nextRank,currentRank);
+            if(norm <= this.approxParam){
+                converged = true;
+                this.pageRanks = nextRank;
+                n++;
+                break;
+            }
+            currentRank = nextRank;
+            LOGGER.log(Level.INFO,n+" step! norm value= "+norm);
+            n++;
+        }
 
         LOGGER.exiting(CLASS_NAME,METHOD_NAME);
+    }
+
+    private double normalize(HashMap<String, Double> nextRank, HashMap<String, Double> currentRank) {
+        final String METHOD_NAME = "normalize";
+        LOGGER.entering(CLASS_NAME,METHOD_NAME);
+
+        Iterator<String> keysIterator = nextRank.keySet().iterator();
+        double normalize = 0;
+        while(keysIterator.hasNext()){
+            String page = keysIterator.next();
+            normalize+= Math.abs(nextRank.get(page)-currentRank.get(page));
+        }
+        LOGGER.exiting(CLASS_NAME,METHOD_NAME);
+        return normalize;
     }
 
     private HashMap<String,Double> computeNextP(HashMap<String,Double> prevRank){
@@ -287,9 +317,9 @@ public class PageRank {
 
     public static void main(String[] args){
         PageRank pageRank = new PageRank("/Users/nishanthsivakumar/Desktop/PavanWikiTennis.txt",0.001);
-        System.out.println(pageRank.topKInDegree(100).length);
-        for(String s :pageRank.topKInDegree(100)){
-            System.out.println(s);
+        System.out.println(pageRank.topKPageRank(100).length);
+        for(String s :pageRank.topKPageRank(100)){
+            System.out.println(s+"\t"+pageRank.pageRankOf(s));
         }
         System.out.println(pageRank.numEdges());
 
