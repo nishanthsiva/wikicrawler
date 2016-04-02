@@ -100,7 +100,7 @@ public class PageRank {
         return inDegrees.get(pageName);
     }
 
-    public int outDegreesOf(String pageName){
+    public int outDegreeOf(String pageName){
         return outDegrees.get(pageName);
     }
 
@@ -157,9 +157,10 @@ public class PageRank {
         try {
             FileReader fileReader = new FileReader(new File(this.filename));
             BufferedReader bufferedReader = new BufferedReader(fileReader);
-            int nodes = 0;
+            double nodes = 0;
             if(bufferedReader.ready()){
                 nodes = Integer.parseInt(bufferedReader.readLine());
+                LOGGER.log(Level.FINE,"Nodes found = "+nodes);
             }
             while(bufferedReader.ready()){
                 String edge = bufferedReader.readLine();
@@ -219,25 +220,33 @@ public class PageRank {
 
         parseGraph();
         createPageIndex();
-        int n=0;
+        int n=1;
+        double norm = 0.0;
         boolean converged = false;
         HashMap<String,Double> currentRank = this.pageRanks;
         HashMap<String,Double> nextRank;
         while(!converged){
+            LOGGER.log(Level.FINE,"Sum of Page Ranks = "+getSumOfPageRanks(currentRank));
             nextRank = computeNextP(currentRank);
-            double norm = normalize(nextRank,currentRank);
+            norm = normalize(nextRank,currentRank);
             if(norm <= this.approxParam){
                 converged = true;
                 this.pageRanks = nextRank;
-                n++;
                 break;
             }
             currentRank = nextRank;
-            LOGGER.log(Level.FINE,n+" step! norm value= "+norm);
             n++;
         }
-
+        LOGGER.log(Level.FINE,n+" step! norm value= "+norm);
         LOGGER.exiting(CLASS_NAME,METHOD_NAME);
+    }
+
+    private double getSumOfPageRanks(HashMap<String,Double> currentRank){
+        double pgr = 0.0;
+        for(String page : currentRank.keySet()){
+            pgr += currentRank.get(page);
+        }
+        return pgr;
     }
 
     private double normalize(HashMap<String, Double> nextRank, HashMap<String, Double> currentRank) {
@@ -316,12 +325,22 @@ public class PageRank {
     }
 
     public static void main(String[] args){
-        PageRank pageRank = new PageRank("/Users/nishanthsivakumar/Desktop/PavanWikiTennis.txt",0.001);
-        System.out.println(pageRank.topKPageRank(100).length);
-        for(String s :pageRank.topKPageRank(100)){
+        PageRank pageRank = new PageRank("WikiTennisGraph.txt",0.005);
+        System.out.println(pageRank.topKPageRank(15).length);
+        double pgr = 0.0;
+        System.out.println("Top 15 page Ranks - ");
+        for(String s :pageRank.topKPageRank(15)){
+            pgr += pageRank.pageRankOf(s);
             System.out.println(s+"\t"+pageRank.pageRankOf(s));
         }
-        System.out.println(pageRank.numEdges());
+        System.out.println("Top 15 In Degrees - ");
+        for(String s: pageRank.topKInDegree(15)){
+            System.out.println(s+"\t"+pageRank.inDegreeOf(s));
+        }
+        System.out.println("Top 15 Out Degrees - ");
+        for(String s: pageRank.topKOutDegree(15)){
+            System.out.println(s+"\t"+pageRank.outDegreeOf(s));
+        }
 
     }
 }

@@ -32,10 +32,11 @@ public class WikiTennisRanker {
     }
 
     public static void main(String arg[]){
-        WikiCrawler wikiCrawler = new WikiCrawler();
-        //TODO call wiki.crawl
-        //TODO change the file name after Sriram checks in his code
-        PageRank pageRank = new PageRank("/Users/nishanthsivakumar/Desktop/PavanWikiTennis.txt",0.01);
+        String[] keywords = {"tennis", "grand slam"};
+        WikiCrawler crawler = new WikiCrawler("/wiki/Tennis", keywords, 1000, "WikiTennisGraph.txt");
+        crawler.crawl();
+
+        PageRank pageRank = new PageRank("WikiTennisGraph.txt",0.01);
         System.out.println("Highest Page Rank  - "+pageRank.topKPageRank(1)[0]);
         System.out.println("Highest In Degree  - "+pageRank.topKInDegree(1)[0]);
         System.out.println("Highest Out Degree  - "+pageRank.topKOutDegree(1)[0]);
@@ -49,8 +50,7 @@ public class WikiTennisRanker {
         System.out.println("Jaccard Similarity of top 100 In Degrees and top 100 Out Degrees = "+exactJaccard(top100InDegree,top100OutDegree));
 
         System.out.println();
-        //TODO change the file name after Sriram checks in his code
-        pageRank = new PageRank("/Users/nishanthsivakumar/Desktop/PavanWikiTennis.txt",0.005);
+        pageRank = new PageRank("WikiTennisGraph.txt",0.005);
         System.out.println("Highest Page Rank  - "+pageRank.topKPageRank(1)[0]);
         System.out.println("Highest In Degree  - "+pageRank.topKInDegree(1)[0]);
         System.out.println("Highest Out Degree  - "+pageRank.topKOutDegree(1)[0]);
