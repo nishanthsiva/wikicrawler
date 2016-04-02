@@ -325,7 +325,7 @@ public class PageRank {
     }
 
     public static void main(String[] args){
-        PageRank pageRank = new PageRank("WikiTennisGraph.txt",0.005);
+        PageRank pageRank = new PageRank("MyWikiGraph.txt",0.005);
         System.out.println(pageRank.topKPageRank(15).length);
         double pgr = 0.0;
         System.out.println("Top 15 page Ranks - ");

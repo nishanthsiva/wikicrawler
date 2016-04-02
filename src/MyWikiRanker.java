@@ -32,7 +32,7 @@ public class MyWikiRanker {
     }
 
     public static void main(String arg[]){
-        String[] keywords = {"game", "graphics","engine"};
+        String[] keywords = {"video", "game","play"};
         WikiCrawler crawler = new WikiCrawler("/wiki/Video_game", keywords, 1000, "MyWikiGraph.txt");
         crawler.crawl();
 
