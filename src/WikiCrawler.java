@@ -6,11 +6,16 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -59,7 +64,9 @@ public class WikiCrawler {
 	}
 	
 	public void crawl(){
-		List<String> output = new ArrayList<String>();
+		long startTime = System.currentTimeMillis();
+		// List<String> output = new ArrayList<String>();
+		LinkedHashMap<String,List<String>> output = new LinkedHashMap<String,List<String>>();
 		// we do not use the queue for the seed url to check if we are starting with an incorrect url
 		String page = fetchPage(BASE_URL + seedURL);
 		if(!pageContainsAllKeywords(page)) {
@@ -77,7 +84,10 @@ public class WikiCrawler {
 			page = fetchPage(BASE_URL + linkElement.link);
 			if(pageContainsAllKeywords(page)){
 				confirmed.add(linkElement.link);
-				output.add(linkElement.parentLink + " " + linkElement.link);
+				if (!output.containsKey(linkElement.parentLink)) {
+					output.put(linkElement.parentLink, new ArrayList<String>());
+				}
+				output.get(linkElement.parentLink).add(linkElement.link);
 				links = extractLinks(page);
 				for (String link : links){
 					if (!link.equals(linkElement.link)){
@@ -85,8 +95,11 @@ public class WikiCrawler {
 							queue.add(new LinkElement(link,linkElement.link));
 							visited.add(link);
 						} else if(confirmed.contains(link)) {
-							if (!output.contains(linkElement.link + " " + link)){
-								output.add(linkElement.link + " " + link);
+							if (!output.containsKey(linkElement.link)) {
+								output.put(linkElement.link, new ArrayList<String>());
+							}
+							if (!output.get(linkElement.link).contains(link)){
+								output.get(linkElement.link).add(link);
 							} 
 						} else {
 							unconfirmedList.add(new LinkElement(link, linkElement.link));
@@ -98,9 +111,12 @@ public class WikiCrawler {
 		// re-visit those unconfirmed links
 		for(LinkElement element : unconfirmedList) {
 			if (confirmed.contains(element.link)){
-				output.add(element.parentLink + " " + element.link);
+				if (!output.get(element.parentLink).contains(element.link)) {
+					output.get(element.parentLink).add(element.link);
+				}
 			}
 		}
+		
 		// write to file
 		try {
 			File file = new File(fileName);
@@ -110,15 +126,23 @@ public class WikiCrawler {
 			FileWriter writer = new FileWriter(file);
 			String newLine = System.getProperty("line.separator");
 			writer.write(confirmed.size() + newLine);
-			for(String line : output) {
+			for(Map.Entry<String,List<String>> entry : output.entrySet()) {
+				  String key = entry.getKey();
+				  List<String> value = entry.getValue();
+				  for (String v : value) {
+					  writer.append(key + " " + v + newLine);
+				  }
+				}
+			/*for(String line : newOutput) {
 				writer.append(line + newLine);
-			}
+			}*/
 			writer.flush();
 			writer.close();
 		} catch (IOException e){
 			e.printStackTrace();
 		}
-		System.out.println("Crawling completed. Total requests - " + totalRequests);
+		long endTime = System.currentTimeMillis();
+		System.out.println("Crawling completed. Total requests - " + totalRequests + ". Total time - " + (endTime - startTime));
 	}
 	
 	private boolean pageContainsAllKeywords(String page) {
@@ -134,7 +158,9 @@ public class WikiCrawler {
 	private String fetchPage(String uri){
 		String page = null;
 		try {
-			if (totalRequests % 100 == 0) Thread.sleep(5000);
+			if (totalRequests % 100 == 0) {
+				Thread.sleep(5000);
+			}
 			URL url = new URL(uri);
 			InputStream inputStream = url.openStream();
 			totalRequests++;
