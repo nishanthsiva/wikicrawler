@@ -6,25 +6,23 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * Created by Nishanth Sivakumar and Sriram Balasubramanian on 3/25/16.
  */
-public class WikiCrawler {
+public class WikiCrawler{
 	
-	final static String RAW_BASE_URL = "https://en.wikipedia.org/w/index.php?title=";
+	final static String RAW_BASE_URL = "https://en.wikipedia.org/w/index.php?action=raw&title=";
 	final static String BASE_URL = "https://en.wikipedia.org";
 	final static String RAW_PAGE = "&action=raw";
 	
@@ -49,9 +47,6 @@ public class WikiCrawler {
 		}
 	}
 	
-	//private static final String wikiLinkPattern = ;
-			//"\\b/wiki/.*\"";
-	
 	public WikiCrawler() {
 		
 	}
@@ -66,7 +61,7 @@ public class WikiCrawler {
 	public void crawl(){
 		long startTime = System.currentTimeMillis();
 		// List<String> output = new ArrayList<String>();
-		LinkedHashMap<String,List<String>> output = new LinkedHashMap<String,List<String>>();
+		LinkedHashMap<String,Set<String>> output = new LinkedHashMap<String,Set<String>>();
 		// we do not use the queue for the seed url to check if we are starting with an incorrect url
 		String page = fetchPage(BASE_URL + seedURL);
 		if(!pageContainsAllKeywords(page)) {
@@ -75,17 +70,19 @@ public class WikiCrawler {
 		confirmed.add(seedURL);
 		List<String> links = extractLinks(page);
 		for (String link : links){
-			queue.add(new LinkElement(link,seedURL));
-			visited.add(link);
+			if(!visited.contains(link)) {
+				queue.add(new LinkElement(link,seedURL));
+				visited.add(link);
+			}
 		}
 		while(!queue.isEmpty() && confirmed.size() < maxPage) {
 			LinkElement linkElement = queue.remove();
-			System.out.println("Fetching - " + confirmed.size() + " - " + BASE_URL + linkElement.link);
+			System.out.println("Requesting page : Current Node Size - " + confirmed.size() + " . Fetching page - " + linkElement.link + " . Parent page - " + linkElement.parentLink);
 			page = fetchPage(BASE_URL + linkElement.link);
-			if(pageContainsAllKeywords(page)){
+			if(page != null && pageContainsAllKeywords(page)){
 				confirmed.add(linkElement.link);
 				if (!output.containsKey(linkElement.parentLink)) {
-					output.put(linkElement.parentLink, new ArrayList<String>());
+					output.put(linkElement.parentLink, new LinkedHashSet<String>());
 				}
 				output.get(linkElement.parentLink).add(linkElement.link);
 				links = extractLinks(page);
@@ -96,11 +93,9 @@ public class WikiCrawler {
 							visited.add(link);
 						} else if(confirmed.contains(link)) {
 							if (!output.containsKey(linkElement.link)) {
-								output.put(linkElement.link, new ArrayList<String>());
+								output.put(linkElement.link, new LinkedHashSet<String>());
 							}
-							if (!output.get(linkElement.link).contains(link)){
-								output.get(linkElement.link).add(link);
-							} 
+							output.get(linkElement.link).add(link);
 						} else {
 							unconfirmedList.add(new LinkElement(link, linkElement.link));
 						}
@@ -111,8 +106,10 @@ public class WikiCrawler {
 		// re-visit those unconfirmed links
 		for(LinkElement element : unconfirmedList) {
 			if (confirmed.contains(element.link)){
-				if (!output.get(element.parentLink).contains(element.link)) {
-					output.get(element.parentLink).add(element.link);
+				if(output.containsKey(element.parentLink)){
+					if (!output.get(element.parentLink).contains(element.link)) {
+						output.get(element.parentLink).add(element.link);
+					}
 				}
 			}
 		}
@@ -126,16 +123,13 @@ public class WikiCrawler {
 			FileWriter writer = new FileWriter(file);
 			String newLine = System.getProperty("line.separator");
 			writer.write(confirmed.size() + newLine);
-			for(Map.Entry<String,List<String>> entry : output.entrySet()) {
+			for(Map.Entry<String,Set<String>> entry : output.entrySet()) {
 				  String key = entry.getKey();
-				  List<String> value = entry.getValue();
+				  Set<String> value = entry.getValue();
 				  for (String v : value) {
 					  writer.append(key + " " + v + newLine);
 				  }
 				}
-			/*for(String line : newOutput) {
-				writer.append(line + newLine);
-			}*/
 			writer.flush();
 			writer.close();
 		} catch (IOException e){
@@ -154,11 +148,11 @@ public class WikiCrawler {
 		}
 		return true;
 	}
-
+	
 	private String fetchPage(String uri){
 		String page = null;
 		try {
-			if (totalRequests % 100 == 0) {
+			if ((totalRequests % 100 == 0) && (totalRequests != 0)) {
 				Thread.sleep(5000);
 			}
 			URL url = new URL(uri);
